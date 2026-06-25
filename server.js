@@ -49,6 +49,14 @@ const setCache = async (key, value, ttl = 600) => {
     localCache.set(key, value, ttl);
 };
 
+app.get('/', (req, res) => {
+    res.json({ success: true, message: "OxyCare Labs API Server is running." });
+});
+
+app.get('/api/health', (req, res) => {
+    res.json({ success: true, status: "healthy", message: "OxyCare Labs API Server is running." });
+});
+
 app.post('/api/payment/create', async (req, res) => {
     try {
         const { gateway, amount, orderId, userId, phone, credentials } = req.body;
