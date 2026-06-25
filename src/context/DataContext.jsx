@@ -150,6 +150,7 @@ const defaultCityList = [
 ];
 
 export const DataProvider = ({ children }) => {
+    const [dbError, setDbError] = useState(null);
     const [packages, setPackages] = useState([]);
     const [testCategories, setTestCategories] = useState([]);
     const [labs, setLabs] = useState([]);
@@ -270,6 +271,7 @@ export const DataProvider = ({ children }) => {
                 console.log('DataContext: Initialization Complete.');
             } catch (globalError) {
                 console.error('CRITICAL: DataContext Initialization Failed Entirely:', globalError);
+                setDbError(globalError.message || String(globalError));
                 // Fallbacks to keep app alive
                 setPackages(defaultPackages);
                 setLabs(defaultLabs);
@@ -429,7 +431,8 @@ export const DataProvider = ({ children }) => {
             removeDemoData,
             slots, updateSlots,
             clearAllData,
-            isDataLoaded
+            isDataLoaded,
+            dbError
         }}>
             {children}
         </DataContext.Provider>

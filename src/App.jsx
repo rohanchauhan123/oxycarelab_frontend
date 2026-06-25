@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { LocationProvider } from './context/LocationContext';
 import { CartProvider } from './context/CartContext';
-import { DataProvider } from './context/DataContext';
+import { DataProvider, useData } from './context/DataContext';
 import { AuthProvider } from './context/AuthContext';
 import ScrollToTop from './components/utils/ScrollToTop';
 import Navbar from './components/layout/Navbar';
@@ -72,6 +72,16 @@ import UserMembers from './pages/dashboard/Members';
 import UserInvoices from './pages/dashboard/Invoices';
 import ErrorBoundary from './components/utils/ErrorBoundary';
 
+const DatabaseErrorBanner = () => {
+  const { dbError } = useData();
+  if (!dbError) return null;
+  return (
+    <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '12px 24px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', borderBottom: '1px solid #fca5a5', zIndex: 99999, position: 'relative', fontFamily: 'sans-serif' }}>
+      ⚠️ Database Connection Error: {dbError}. The application is running in OFFLINE mock mode. Your changes will not be saved.
+    </div>
+  );
+};
+
 const App = () => {
   console.log('App component executing');
   return (
@@ -80,6 +90,7 @@ const App = () => {
         <LocationProvider>
           <CartProvider>
             <DataProvider>
+              <DatabaseErrorBanner />
               <Router>
                 <ScrollToTop />
                 <Routes>
