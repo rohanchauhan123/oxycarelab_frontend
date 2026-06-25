@@ -186,8 +186,7 @@ export const DataProvider = ({ children }) => {
                 const [
                     pkgs, cats, lbs, tsts, blgs, 
                     mbrs, addrs, usrs, bkngs, cbrq,
-                    ptrn, jvbs
-                    // Offers, Cities and Slots are currently held offline in this mock but should eventually move to api too
+                    ptrn, jvbs, ctys
                 ] = await Promise.all([
                     api.packages.getAll(),
                     api.categories.getAll(),
@@ -200,7 +199,8 @@ export const DataProvider = ({ children }) => {
                     api.bookings.getAll(),
                     api.callbackRequests.getAll(),
                     api.partnerships.getAll(),
-                    api.jobApplications.getAll()
+                    api.jobApplications.getAll(),
+                    api.cities.getAll()
                 ]);
 
                 // Filter out 'Deleted' items (Soft Delete support)
@@ -218,6 +218,7 @@ export const DataProvider = ({ children }) => {
                 setCallbackRequests(filterDeleted(cbrq));
                 setPartnerships(filterDeleted(ptrn));
                 setJobApplications(filterDeleted(jvbs));
+                setServiceableCities(filterDeleted(ctys));
 
                 // Auto-Hydration for completely new projects connecting for the first time
                 if (pkgs.length === 0) {
@@ -246,10 +247,14 @@ export const DataProvider = ({ children }) => {
                     setBlogs(defaultBlogs);
                 } 
 
+                if (ctys.length === 0) {
+                    await api.cities.saveBulk(defaultCityList);
+                    setServiceableCities(defaultCityList);
+                }
+
                 // Static Defaults fallback
                 setOffers(defaultOffers);
                 setSlots(defaultSlots);
-                setServiceableCities(defaultCityList);
 
                 // Load Payment Settings
                 const savedPayment = localStorage.getItem('oxycare_payment_settings');
@@ -388,9 +393,20 @@ export const DataProvider = ({ children }) => {
     const updateSlots = async (newSlots) => { setSlots(newSlots); };
 
     // Cities
-    const addCity = async (city) => { const newCity = { ...city, id: Date.now() }; setServiceableCities(prev => [...prev, newCity]); return newCity; };
-    const updateCity = async (id, updatedCity) => { setServiceableCities(prev => prev.map(c => c.id === id ? { ...c, ...updatedCity } : c)); };
-    const deleteCity = async (id) => { setServiceableCities(prev => prev.filter(c => c.id !== id)); };
+    const addCity = async (city) => { 
+        const newCity = await api.cities.create(city); 
+        setServiceableCities(prev => [...prev, newCity]); 
+        return newCity; 
+    };
+    const updateCity = async (id, updatedCity) => { 
+        const updated = await api.cities.update(id, updatedCity); 
+        setServiceableCities(prev => prev.map(c => c.id === id ? updated : c)); 
+        return updated;
+    };
+    const deleteCity = async (id) => { 
+        await api.cities.delete(id); 
+        setServiceableCities(prev => prev.filter(c => c.id !== id)); 
+    };
     const removeDemoData = async () => { console.warn("removeDemoData disabled in Cloud backend."); return true; };
 
     return (

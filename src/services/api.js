@@ -236,6 +236,14 @@ export const api = {
             if (!res.ok) throw new Error('Lab selection failed');
             return res.json();
         }
+    },
+    // Cities API
+    cities: {
+        getAll: () => getTable('cities'),
+        create: (city) => createItem('cities', city, 'CTY'),
+        update: (id, data) => updateItem('cities', id, data),
+        delete: (id) => deleteItem('cities', id),
+        saveBulk: (cities) => saveBulkOverride('cities', cities)
     }
 };
 
