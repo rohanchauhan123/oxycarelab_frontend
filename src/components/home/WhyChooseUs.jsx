@@ -1,86 +1,113 @@
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Truck, FlaskConical, Headphones, Award, Smartphone } from 'lucide-react';
+import { ShieldCheck, Clock, Home, Microscope, Zap, PhoneCall, FileCheck } from 'lucide-react';
 
-const features = [
+const reasons = [
     {
-        title: 'Certified Lab Partners',
-        desc: 'All our partner labs are NABL & ISO certified with stringent quality checks.',
-        icon: ShieldCheck,
-    },
-    {
+        icon: <Home size={28} className="text-emerald-600" />,
         title: 'Free Home Collection',
-        desc: 'Trained phlebotomists will collect your samples from your doorstep at your convenience.',
-        icon: Truck,
+        desc: 'Our trained phlebotomists visit your home at your preferred time slot.',
+        badge: 'Zero Extra Cost',
+        badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     },
     {
-        title: 'Advanced Testing',
-        desc: 'Use of high-end technology and precise equipment for accurate diagnostic results.',
-        icon: FlaskConical,
+        icon: <ShieldCheck size={28} className="text-blue-600" />,
+        title: 'NABL Certified Labs',
+        desc: 'All our partner labs are NABL & ISO accredited, ensuring highest accuracy.',
+        badge: 'Government Verified',
+        badgeColor: 'bg-blue-50 text-blue-700 border-blue-100',
     },
     {
-        title: 'Quick Digital Reports',
-        desc: 'Get your reports directly on your mobile within 24 hours of sample collection.',
-        icon: Smartphone,
+        icon: <Clock size={28} className="text-orange-600" />,
+        title: 'Reports in 24 Hours',
+        desc: 'Receive easy-to-read digital reports on WhatsApp & Email within 24 hours.',
+        badge: 'Fast TAT',
+        badgeColor: 'bg-orange-50 text-orange-700 border-orange-100',
     },
     {
-        title: 'Expert Consultations',
-        desc: 'Post-report consultations with qualified doctors to understand your results.',
-        icon: Headphones,
+        icon: <Microscope size={28} className="text-purple-600" />,
+        title: '1500+ Tests Available',
+        desc: 'From basic blood tests to advanced genetic panels — we have everything.',
+        badge: 'Widest Coverage',
+        badgeColor: 'bg-purple-50 text-purple-700 border-purple-100',
     },
     {
-        title: 'Best Price Guarantee',
-        desc: 'We offer premium diagnostic services at the most affordable prices in the market.',
-        icon: Award,
-    }
+        icon: <FileCheck size={28} className="text-teal-600" />,
+        title: 'Doctor-Reviewed Reports',
+        desc: 'Every report comes with color-coded normal ranges and easy interpretation.',
+        badge: 'Expert Reviewed',
+        badgeColor: 'bg-teal-50 text-teal-700 border-teal-100',
+    },
+    {
+        icon: <PhoneCall size={28} className="text-rose-600" />,
+        title: '24/7 Support',
+        desc: 'Dedicated healthcare support team available round the clock for your queries.',
+        badge: 'Always Here',
+        badgeColor: 'bg-rose-50 text-rose-700 border-rose-100',
+    },
 ];
 
 const WhyChooseUs = () => {
     return (
-        <section className="py-20 bg-white">
-            <div className="container mx-auto px-4">
-                <div className="max-w-4xl mx-auto text-center mb-20">
-                    <h2 className="text-3xl md:text-5xl font-display font-bold text-dark-text mb-6">
-                        Why Millions Trust <br />
-                        <span className="text-medical-green">OxyCareLabs</span> for Diagnostics
-                    </h2>
-                    <p className="text-grey-text leading-relaxed text-lg max-w-2xl mx-auto">
-                        We understand that behind every sample is a life. That's why we maintain the highest standards of accuracy, reliability, and speed in our diagnostic services.
-                    </p>
+        <section className="py-24 bg-gray-50 relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-72 h-72 bg-teal-100/40 rounded-full blur-3xl" />
+            </div>
+
+            <div className="container mx-auto px-4 relative z-10">
+                <div className="text-center mb-16">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-full mb-6"
+                    >
+                        <Zap size={14} className="text-emerald-600" />
+                        <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700">Why OxyCare Labs</span>
+                    </motion.div>
+                    <motion.h2
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.1 }}
+                        className="text-4xl md:text-5xl font-black text-gray-900 leading-tight mb-4"
+                    >
+                        The Smarter Way to{' '}
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">Get Tested</span>
+                    </motion.h2>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.15 }}
+                        className="text-lg text-gray-500 max-w-xl mx-auto font-medium"
+                    >
+                        We've reimagined every step of your diagnostic experience — from booking to report delivery.
+                    </motion.p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-20">
-                    {features.map((feature, i) => (
-                        <motion.div 
-                            key={i} 
-                            initial={{ opacity: 0, y: 20 }}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                    {reasons.map((r, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 24 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ delay: i * 0.1 }}
-                            className="flex flex-col items-center text-center p-8 rounded-[32px] bg-gray-50 hover:bg-white hover:shadow-xl transition-all border border-transparent hover:border-soft-green group"
+                            transition={{ delay: i * 0.08 }}
+                            whileHover={{ y: -4 }}
+                            className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm hover:shadow-lg transition-all group"
                         >
-                            <div className="w-16 h-16 shrink-0 bg-white rounded-2xl flex items-center justify-center text-medical-green shadow-sm group-hover:scale-110 transition-transform mb-6">
-                                <feature.icon size={32} />
+                            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                                {r.icon}
                             </div>
-                            <h4 className="text-xl font-black text-dark-text mb-3 group-hover:text-medical-green transition-colors">{feature.title}</h4>
-                            <p className="text-base text-grey-text font-medium leading-relaxed">{feature.desc}</p>
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${r.badgeColor} mb-4 inline-block`}>
+                                {r.badge}
+                            </span>
+                            <h3 className="text-xl font-black text-gray-900 mb-2">{r.title}</h3>
+                            <p className="text-gray-500 font-medium leading-relaxed text-sm">{r.desc}</p>
                         </motion.div>
                     ))}
-                </div>
-
-                <div className="max-w-5xl mx-auto relative rounded-[60px] overflow-hidden shadow-2xl">
-                    <img
-                        src="/assets/content/healthcare_pro.png"
-                        alt="Healthcare Professional"
-                        className="w-full h-[300px] md:h-[400px] object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-medical-green/60 to-transparent" />
-
-                    {/* Floating Stat Card - Centered at bottom */}
-                    <div className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md p-6 md:p-10 rounded-3xl shadow-2xl border border-white/50 flex flex-col items-center text-center w-[90%] sm:w-auto min-w-[280px]">
-                        <p className="text-4xl md:text-5xl font-display font-bold text-medical-green mb-2">99.9%</p>
-                        <p className="text-lg md:text-xl font-bold text-dark-text mb-3">Accuracy Rate</p>
-                        <p className="text-[10px] md:text-sm text-grey-text">Maintained across 1.2M+ tests conducted last year alone.</p>
-                    </div>
                 </div>
             </div>
         </section>
