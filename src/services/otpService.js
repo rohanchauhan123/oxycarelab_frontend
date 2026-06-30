@@ -1,46 +1,39 @@
 /**
- * Simulated OTP Service for OxyCare Labs
- * For production, integrate with MSG91, Twilio, or Firebase Auth.
+ * WhatsApp OTP Service for OxyCare Labs
+ * Calls the backend API which uses WhatsApp Cloud API to send real OTPs.
+ * OTPs are stored in Supabase (server-side) for secure verification.
  */
 
-const otpDatabase = new Map();
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 export const sendOTP = async (phoneNumber) => {
-    // Generate a 4-digit OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    
-    // Store it with a 5-minute expiry
-    otpDatabase.set(phoneNumber, {
-        otp,
-        expiry: Date.now() + 5 * 60 * 1000
+    const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+    const phone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+
+    const response = await fetch(`${BACKEND_URL}/api/otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
     });
 
-    console.log(`[OTP SERVICE] Sent OTP ${otp} to ${phoneNumber}`);
-    
-    // Simulate network delay
-    return new Promise((resolve) => setTimeout(() => {
-        // In a real app, you'd call an SMS gateway API here.
-        resolve({ success: true, message: 'OTP sent successfully!' });
-    }, 1000));
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to send OTP via WhatsApp');
+
+    return { success: true, message: 'OTP sent to your WhatsApp number!' };
 };
 
 export const verifyOTP = async (phoneNumber, userOtp) => {
-    const record = otpDatabase.get(phoneNumber);
-    
-    if (!record) {
-        throw new Error('OTP not found or expired. Please resend.');
-    }
+    const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+    const phone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
-    if (Date.now() > record.expiry) {
-        otpDatabase.delete(phoneNumber);
-        throw new Error('OTP has expired. Please request a new one.');
-    }
+    const response = await fetch(`${BACKEND_URL}/api/otp/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp: String(userOtp) })
+    });
 
-    if (record.otp !== userOtp) {
-        throw new Error('Invalid OTP. Please try again.');
-    }
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'OTP verification failed');
 
-    // Success - delete it so it can't be reused
-    otpDatabase.delete(phoneNumber);
     return { success: true };
 };
