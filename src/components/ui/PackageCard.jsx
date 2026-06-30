@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, Shield, CheckCircle2 } from 'lucide-react';
-import Button from './Button';
+import { Star, FlaskConical, Droplets, Clock, Microscope, ShoppingCart, Check } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 const PackageCard = ({ pkg }) => {
@@ -10,119 +9,133 @@ const PackageCard = ({ pkg }) => {
     const { addToCart, cart } = useCart();
     const isInCart = Array.isArray(cart) ? cart.find(i => i?.id === pkg?.id) : false;
 
+    const discount = pkg?.originalPrice && pkg?.price
+        ? Math.round(((Number(pkg.originalPrice) - Number(pkg.price)) / Number(pkg.originalPrice)) * 100)
+        : 0;
+
+    const handleAddToCart = (e) => {
+        e.stopPropagation();
+        if (!isInCart && pkg) {
+            addToCart({
+                ...pkg,
+                name: pkg.name || 'Health Package',
+                price: pkg.price
+            });
+        }
+    };
+
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group relative flex flex-col overflow-hidden cursor-pointer h-full"
+            whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.10)' }}
+            transition={{ duration: 0.25 }}
+            className="bg-white rounded-2xl border border-gray-200 flex flex-col cursor-pointer overflow-hidden h-full"
             onClick={() => navigate(`/item-details/${pkg?.id || pkg?.name}`)}
+            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
         >
-            {/* Card Header with Image */}
-            <div className="h-56 md:h-64 relative overflow-hidden">
-                <img
-                    src={pkg?.image || `/assets/packages/${pkg?.category === 'Full Body' ? 'full_body' : pkg?.category === 'Women Health' ? 'women_wellness' : pkg?.category === 'Senior Citizen' ? 'elderly_care' : 'cardiac'}.png`}
-                    alt={pkg?.name || 'Diagnostic Package'}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1579152276503-884962f275d3?q=80&w=800&auto=format&fit=crop';
-                    }}
-                />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    {pkg?.tag && (
-                        <div className="bg-medical-green text-white text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-[2px] shadow-lg">
-                            {pkg.tag}
+            {/* Top: Icon + Price */}
+            <div className="flex items-start justify-between px-5 pt-5 pb-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+                    <FlaskConical size={24} className="text-emerald-600" />
+                </div>
+                <div className="text-right">
+                    <div className="text-2xl font-black text-emerald-600 leading-tight">
+                        ₹{pkg?.price || 0}
+                    </div>
+                    {pkg?.originalPrice && (
+                        <div className="text-sm text-gray-400 line-through font-semibold">
+                            ₹{pkg.originalPrice}
                         </div>
                     )}
                 </div>
+            </div>
 
-                <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
-                    {pkg?.isLocal && (
-                        <span className="bg-emerald-500 text-white text-[8px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/20 animate-pulse">
-                            Near You
-                        </span>
-                    )}
-                    {pkg?.isNational && !pkg?.isLocal && (
-                        <span className="bg-white/90 backdrop-blur-md text-blue-600 text-[8px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest border border-blue-100 shadow-sm">
-                            National Partner
-                        </span>
-                    )}
+            {/* Badges Row */}
+            <div className="flex flex-wrap gap-1.5 px-5 pb-3">
+                {pkg?.category && (
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-orange-100 text-orange-600">
+                        {pkg.category}
+                    </span>
+                )}
+                {pkg?.fasting && (
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-orange-100 text-orange-600">
+                        Fasting Required
+                    </span>
+                )}
+                {pkg?.tag && (
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                        {pkg.tag}
+                    </span>
+                )}
+                {pkg?.isLocal && (
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                        Near You
+                    </span>
+                )}
+            </div>
+
+            {/* Name + Lab */}
+            <div className="px-5 pb-3">
+                <h3 className="text-lg font-black text-emerald-700 leading-tight mb-0.5 line-clamp-2">
+                    {pkg?.name || 'Health Package'}
+                </h3>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    {pkg?.labName || 'OxyCare Labs'}
+                </p>
+            </div>
+
+            {/* Sample Type */}
+            <div className="px-5 pb-2">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-emerald-700 uppercase tracking-wider bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5">
+                    <Droplets size={12} className="text-emerald-600" />
+                    Sample: {pkg?.sampleType || 'Blood'}
+                </span>
+            </div>
+
+            {/* Parameters Count */}
+            <div className="px-5 pb-4">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-emerald-700 uppercase tracking-wider bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5">
+                    <Microscope size={12} className="text-emerald-600" />
+                    {pkg?.testsCount || pkg?.parameters?.length || 1} Parameters
+                </span>
+            </div>
+
+            {/* Reports In + Method Row */}
+            <div className="flex gap-6 px-5 pb-4 border-t border-gray-100 pt-3">
+                <div>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Reports In</p>
+                    <p className="text-[11px] font-black text-gray-700 uppercase">{pkg?.tat || '24 Hrs'}</p>
                 </div>
+                <div>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Method</p>
+                    <p className="text-[11px] font-black text-gray-700 uppercase">{pkg?.method || 'Standard'}</p>
+                </div>
+            </div>
 
-                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-black text-dark-text shadow-sm border border-white/50">
+            {/* Footer: Rating + CTA */}
+            <div className="flex items-center justify-between px-5 pb-5 mt-auto">
+                <div className="flex items-center gap-1">
                     <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                    {pkg?.rating || '4.8'}
+                    <span className="text-[13px] font-black text-gray-700">{pkg?.rating || '4.5'}</span>
                 </div>
+
+                <button
+                    onClick={handleAddToCart}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all duration-200 ${
+                        isInCart
+                            ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-300'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 active:scale-95'
+                    }`}
+                >
+                    {isInCart ? (
+                        <><Check size={14} /> In Cart</>
+                    ) : (
+                        <><ShoppingCart size={14} /> Add to Cart</>
+                    )}
+                </button>
             </div>
-
-            {/* Card Content */}
-            <div className="p-5 md:p-6 flex flex-col flex-1">
-                <div className="mb-3">
-                    <h3 className="text-lg md:text-xl font-black text-dark-text mb-1 tracking-tight group-hover:text-medical-green transition-colors leading-tight line-clamp-2 uppercase">
-                        {pkg?.name || 'Health Package'}
-                    </h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[2px] flex items-center gap-2">
-                        <Shield size={12} className="text-medical-green" />
-                        OxyCare Premium Quality
-                    </p>
-                </div>
-
-                <div className="bg-gray-50/50 rounded-2xl p-4 mb-5 border border-gray-100 group-hover:border-medical-green/10 transition-colors">
-                    <div className="flex justify-between items-center mb-4">
-                        <p className="text-[10px] text-medical-green font-black uppercase tracking-[2px]">Top Tests</p>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pkg?.testsCount || pkg?.parameters?.length || 0} Total</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                        {(pkg?.parameters || []).slice(0, 4).map((param, i) => (
-                            <div key={i} className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 whitespace-nowrap overflow-hidden">
-                                <CheckCircle2 size={12} className="text-medical-green shrink-0" />
-                                <span className="truncate">{(param?.name || param?.testName || param || 'Test').toString()}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="mt-auto flex flex-col gap-4">
-                    <div className="flex items-end justify-between">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl font-black text-dark-text">₹{pkg?.price || 0}</span>
-                                {pkg?.originalPrice && (
-                                    <span className="text-sm text-gray-300 line-through font-bold">₹{pkg.originalPrice}</span>
-                                )}
-                            </div>
-                            {pkg?.originalPrice && pkg?.price && (
-                                <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">
-                                   Save {Math.round(((Number(pkg.originalPrice) - Number(pkg.price)) / Number(pkg.originalPrice)) * 100) || 0}% Today
-                                </span>
-                            )}
-                        </div>
-                        
-                        <Button
-                            className={`rounded-xl h-10 px-5 font-black text-[10px] uppercase tracking-[2px] shadow-lg transition-all group/btn ${isInCart
-                                ? 'bg-medical-green/10 text-medical-green border-2 border-medical-green !shadow-none cursor-default'
-                                : 'bg-medical-green hover:bg-medical-green-hover text-white shadow-medical-green/20 scale-100 active:scale-95'
-                                }`}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isInCart && pkg) {
-                                    addToCart({
-                                        ...pkg,
-                                        name: pkg.name || pkg.testName || pkg.test || 'Diagnostic Package',
-                                        price: typeof pkg.price === 'string' && pkg.price.includes('₹') ? pkg.price : `₹${pkg.price}`
-                                    });
-                                }
-                            }}
-                        >
-                            {isInCart ? 'In Cart' : 'Book Now'}
-                        </Button>
-                    </div>
-                </div>
-            </div>
-
         </motion.div>
     );
 };
