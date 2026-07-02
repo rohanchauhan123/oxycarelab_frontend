@@ -38,22 +38,29 @@ const HealthPackages = () => {
         .map(p => {
             const lab = Array.isArray(labs) ? labs.find(l => l?.name === p?.labName || l?.name === p?.lab) : null;
             const labLoc = (lab?.location || '').toLowerCase();
-            const userLoc = (location || '').toLowerCase();
 
-            const isNational = labLoc.includes('multiple') || 
-                               labLoc.includes('ncr') || 
+            const rawUserLoc = (location || '').toLowerCase();
+            const locationParts = rawUserLoc.split(',').map(s => s.trim());
+            const userCity = locationParts.length >= 2 ? locationParts[1] : locationParts[0];
+            const userLoc = userCity || rawUserLoc;
+
+            const hasNoLab = !lab || !labLoc;
+
+            const isNational = hasNoLab ||
+                               labLoc.includes('multiple') ||
+                               labLoc.includes('ncr') ||
                                labLoc.includes('india') ||
                                labLoc.includes('national') ||
                                labLoc.includes('pan india') ||
                                labLoc.includes('nationwide') ||
                                labLoc.includes('across india');
 
-            const ncrCites = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr'];
-            const isUserInNCR = ncrCites.some(c => userLoc.includes(c));
-            const isLabInNCR = ncrCites.some(c => labLoc.includes(c));
+            const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
+            const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
+            const isLabInNCR = ncrCities.some(c => labLoc.includes(c));
 
-            const isDirectMatch = userLoc && userLoc !== 'india' && (
-                labLoc.includes(userLoc) || 
+            const isDirectMatch = !hasNoLab && userLoc && userLoc !== 'india' && (
+                labLoc.includes(userLoc) ||
                 userLoc.includes(labLoc) ||
                 (isUserInNCR && isLabInNCR)
             );

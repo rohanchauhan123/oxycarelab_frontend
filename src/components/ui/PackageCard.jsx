@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, FlaskConical, Droplets, Clock, Microscope, ShoppingCart, Check } from 'lucide-react';
+import { Star, FlaskConical, Droplets, Clock, Microscope, ShoppingCart, Check, Phone } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+
+const CALL_NUMBER = '+918376852126';
 
 const PackageCard = ({ pkg }) => {
     const navigate = useNavigate();
@@ -114,27 +116,33 @@ const PackageCard = ({ pkg }) => {
                 </div>
             </div>
 
-            {/* Footer: Rating + CTA */}
+            {/* Footer: Rating + Call + CTA */}
             <div className="flex items-center justify-between px-5 pb-5 mt-auto">
                 <div className="flex items-center gap-1">
                     <Star size={14} className="text-yellow-400 fill-yellow-400" />
                     <span className="text-[13px] font-black text-gray-700">{pkg?.rating || '4.5'}</span>
                 </div>
 
-                <button
-                    onClick={handleAddToCart}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all duration-200 ${
-                        isInCart
-                            ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-300'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 active:scale-95'
-                    }`}
-                >
-                    {isInCart ? (
-                        <><Check size={14} /> In Cart</>
-                    ) : (
-                        <><ShoppingCart size={14} /> Add to Cart</>
-                    )}
-                </button>
+                <div className="flex items-center gap-2">
+                    <a
+                        href={`tel:${CALL_NUMBER}`}
+                        onClick={e => e.stopPropagation()}
+                        className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-100 transition-all"
+                        title="Call to Book"
+                    >
+                        <Phone size={15} />
+                    </a>
+                    <button
+                        onClick={handleAddToCart}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all duration-200 ${
+                            isInCart
+                                ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-300'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 active:scale-95'
+                        }`}
+                    >
+                        {isInCart ? (<><Check size={14} /> In Cart</>) : (<><ShoppingCart size={14} /> Add</>)}
+                    </button>
+                </div>
             </div>
         </motion.div>
     );
