@@ -21,27 +21,42 @@ const PartnerLabsPage = () => {
 
     const activeLabs = (labs || []).filter(lab => lab && String(lab.status || '').toLowerCase() === 'active');
 
-    const userCity = (location || '').toString().toLowerCase();
+    // ── Parse user city from full or short location string ─────────────────
+    const rawUserLoc = (location || '').toLowerCase().trim();
+    const locParts = rawUserLoc.split(',').map(s => s.trim()).filter(Boolean);
+    const userCity = (locParts.length >= 2 ? locParts[1] : locParts[0]) || rawUserLoc;
+    const locationKnown = userCity && userCity !== 'india';
 
-    // Helper to identify national labs
-    const isLabNational = (locationString) => {
-        const loc = (locationString || '').toLowerCase();
-        return loc.includes('multiple') || 
-               loc.includes('ncr') || 
-               loc.includes('india') || 
-               loc.includes('national') || 
-               loc.includes('pan india') || 
-               loc.includes('nationwide') || 
+    // NCR group — Ghaziabad/Noida/Delhi/Gurugram users all see each other's labs
+    const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
+    const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
+
+    // National = genuinely pan-India (NOT city-specific NCR)
+    const isLabNational = (lab) => {
+        const loc = (lab?.location || lab?.city || '').toLowerCase();
+        return loc === 'india' ||
+               loc === 'all india' ||
+               loc.includes('multiple cities') ||
+               loc.includes('multiple') ||
+               loc.includes('pan india') ||
+               loc.includes('nationwide') ||
                loc.includes('across india');
+    };
+
+    const isLabLocal = (lab) => {
+        const labLoc = (lab?.location || lab?.city || '').toLowerCase();
+        if (!labLoc || !locationKnown) return false;
+        const isLabInNCR = ncrCities.some(c => labLoc.includes(c));
+        return labLoc.includes(userCity) ||
+               userCity.includes(labLoc) ||
+               (isUserInNCR && isLabInNCR);
     };
 
     const filteredLabs = activeLabs
         .filter(lab => {
             if (!lab || !lab.name) return false;
 
-            // Only filter by search query — show ALL active labs by default.
-            // City-based auto-filtering removed: GPS (mobile) vs IP (desktop) gives
-            // different locations, causing inconsistent lab counts across devices.
+            // Search filter (manual)
             if (searchQuery) {
                 const search = searchQuery.toLowerCase();
                 return lab.name.toLowerCase().includes(search) ||
@@ -49,20 +64,28 @@ const PartnerLabsPage = () => {
                     (lab.address || '').toLowerCase().includes(search);
             }
 
-            return true;
+            // Location filter: when location is known, only show local + national labs
+            if (locationKnown) {
+                return isLabLocal(lab) || isLabNational(lab);
+            }
+
+            return true; // location not known → show all
         })
         .sort((a, b) => {
-            // Sort: local-city labs first, then alphabetical
-            const aLoc = (a.location || '').toLowerCase();
-            const bLoc = (b.location || '').toLowerCase();
-            const aIsLocal = userCity && userCity !== 'india' && (aLoc.includes(userCity) || userCity.includes(aLoc));
-            const bIsLocal = userCity && userCity !== 'india' && (bLoc.includes(userCity) || userCity.includes(bLoc));
+            // Local labs always first, then national, then others
+            const aLocal = isLabLocal(a);
+            const bLocal = isLabLocal(b);
+            if (aLocal && !bLocal) return -1;
+            if (!aLocal && bLocal) return 1;
 
-            if (aIsLocal && !bIsLocal) return -1;
-            if (!aIsLocal && bIsLocal) return 1;
+            const aNational = isLabNational(a);
+            const bNational = isLabNational(b);
+            if (aNational && !bNational) return -1;
+            if (!aNational && bNational) return 1;
 
             return (a.name || '').localeCompare(b.name || '');
         });
+
 
     return (
         <div className="bg-[#f8fafc] min-h-screen pt-28 pb-24 font-sans selection:bg-brand-teal selection:text-white relative overflow-hidden">
@@ -82,9 +105,15 @@ const PartnerLabsPage = () => {
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-teal to-[#108A9E] inline-block mt-2">Partner Labs</span>
                     </h1>
                     <p className="text-gray-500/80 text-base md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
-                        We partner exclusively with India's top NABL & CAP accredited laboratories. 
+                        We partner exclusively with India's top NABL &amp; CAP accredited laboratories. 
                         Experience 100% accuracy, rapid reports, and unparalleled diagnostic safety.
                     </p>
+                    {locationKnown && (
+                        <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full text-sm font-bold text-emerald-700">
+                            <MapPin size={14} />
+                            Showing labs available in <span className="font-black capitalize">{userCity}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Search Bar - Glassmorphism */}
@@ -147,6 +176,18 @@ const PartnerLabsPage = () => {
                                             <Star size={14} className="text-amber-500 fill-amber-500" />
                                             <span className="text-sm font-black text-dark-text">{lab?.rating || '4.5'}</span>
                                         </div>
+
+                                        {/* Near You badge */}
+                                        {isLabLocal(lab) && (
+                                            <div className="absolute top-4 left-4 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1">
+                                                <MapPin size={9} /> Near You
+                                            </div>
+                                        )}
+                                        {!isLabLocal(lab) && isLabNational(lab) && (
+                                            <div className="absolute top-4 left-4 bg-blue-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
+                                                Pan India
+                                            </div>
+                                        )}
                                     </div>
                                     
                                     <div className="flex-1 flex flex-col px-4 md:px-5 pb-5">
