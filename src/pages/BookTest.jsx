@@ -67,32 +67,30 @@ const BookTest = () => {
     ]
         .filter(t => {
             if (!t) return false;
-            // Explicitly exclude packages (safety guard)
             if (t.isPackage === true) return false;
             if ((t.type || '').toLowerCase() === 'package') return false;
-            // Items with testsCount or parameters array are packages
             if (t.testsCount !== undefined || Array.isArray(t.parameters)) return false;
 
             const status = (t.status || '').toLowerCase();
             if (status !== 'active' && status !== 'Active' && status !== '') {
                 if (status === 'inactive' || status === 'disabled') return false;
             }
-            
+
             const testSubject = (t.name || t.test || t.testName || t.packageName || '').toLowerCase();
             const matchesSearch = testSubject.includes(searchTerm.toLowerCase()) ||
                 (t.description || t.desc || '').toLowerCase().includes(searchTerm.toLowerCase());
             if (!matchesSearch) return false;
 
             const testCatName = (t.category || t.department || '').toLowerCase();
-            
+
             if (selectedCategories.length > 0) {
                 const matches = selectedCategories.some(sc => sc.toLowerCase() === testCatName);
                 if (!matches) return false;
             }
 
             if (selectedType) {
-                const catDef = (testCategories || []).find(c => 
-                    c.filter.toLowerCase() === testCatName || 
+                const catDef = (testCategories || []).find(c =>
+                    c.filter.toLowerCase() === testCatName ||
                     c.name.toLowerCase() === testCatName
                 );
                 const catType = (catDef?.type || t.categoryType || '').toLowerCase();
@@ -104,48 +102,62 @@ const BookTest = () => {
                 if (!labPartner || !selectedLabs.includes(labPartner)) return false;
             }
 
-            // Location filtering now only marks items as local/national for sorting
-            // We no longer return false here to ensure "saare aane chahiye" requirement
             return true;
         })
         .map(t => {
             if (!t) return null;
+
+            // ── Lab lookup with fuzzy name matching ──────────────────────────────
             const labPartner = String(t?.labName || t?.lab || '').trim().toLowerCase();
             const lab = Array.isArray(labs) ? labs.find(l => {
                 const lName = String(l?.name || '').trim().toLowerCase();
-                return lName === labPartner;
+                // Exact match OR partial/contains match
+                return lName === labPartner ||
+                       lName.includes(labPartner) ||
+                       labPartner.includes(lName);
             }) : null;
 
-            const labLoc = (lab?.location || '').toLowerCase();
+            const labLoc = (lab?.location || lab?.city || '').toLowerCase().trim();
 
-            // Extract just the city part from the full location string (e.g. "Sanjay Nagar, Ghaziabad, Uttar Pradesh" → "ghaziabad")
-            const rawUserLoc = (location || '').toLowerCase();
-            const locationParts = rawUserLoc.split(',').map(s => s.trim());
-            // City is usually the 2nd part in "area, city, state" or first part if single word
+            // ── User location (support "City" and "Area, City, State" formats) ──
+            const rawUserLoc = (location || '').toLowerCase().trim();
+            const locationParts = rawUserLoc.split(',').map(s => s.trim()).filter(Boolean);
+            // Take city part: "Sanjay Nagar, Ghaziabad, UP" → "ghaziabad"
             const userCity = locationParts.length >= 2 ? locationParts[1] : locationParts[0];
-            const userLoc = userCity || rawUserLoc;
+            const userLoc = (userCity || rawUserLoc).trim();
+            const locationKnown = userLoc && userLoc !== 'india';
 
-            // If no lab found for this test, treat as available everywhere (national)
+            // ── No lab found → treat as available everywhere ──────────────────
             const hasNoLab = !lab || !labLoc;
 
+            // ── National = genuinely pan-India available ──────────────────────
+            // NOTE: "Delhi NCR" is NOT national — it is local to NCR only
             const isNational = hasNoLab ||
+                              labLoc === 'india' ||
+                              labLoc === 'all india' ||
+                              labLoc.includes('multiple cities') ||
                               labLoc.includes('multiple') ||
-                              labLoc.includes('ncr') ||
-                              labLoc.includes('india') ||
-                              labLoc.includes('national') ||
                               labLoc.includes('pan india') ||
                               labLoc.includes('nationwide') ||
                               labLoc.includes('across india');
 
+            // ── NCR group — user in NCR sees any NCR lab as local ────────────
             const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
             const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
-            const isLabInNCR = ncrCities.some(c => labLoc.includes(c));
+            const isLabInNCR  = ncrCities.some(c => labLoc.includes(c));
 
-            const isDirectMatch = !hasNoLab && userLoc && userLoc !== 'india' && (
+            const isDirectMatch = !hasNoLab && locationKnown && (
                 labLoc.includes(userLoc) ||
                 userLoc.includes(labLoc) ||
                 (isUserInNCR && isLabInNCR)
             );
+
+            // ── ACTUAL LOCATION FILTER ────────────────────────────────────────
+            // If user location is known AND this test's lab is a specific-city lab
+            // that does NOT match user's city → HIDE it
+            if (locationKnown && !isDirectMatch && !isNational) {
+                return null; // lab exists but is in a different city → filter out
+            }
 
             return {
                 ...t,
@@ -155,15 +167,17 @@ const BookTest = () => {
         })
         .filter(Boolean)
         .sort((a, b) => {
+            // Local tests always first
             if (a?.isLocal && !b?.isLocal) return -1;
             if (!a?.isLocal && b?.isLocal) return 1;
             if (a?.isNational && !b?.isNational) return -1;
             if (!a?.isNational && b?.isNational) return 1;
-            
+
             if (sortBy === 'Price: Low to High') return (a?.price || 0) - (b?.price || 0);
             if (sortBy === 'Price: High to Low') return (b?.price || 0) - (a?.price || 0);
             return 0;
         });
+
 
     // Deduplicate by test name — same test from 10 labs = show once
     // Lab will be selected at checkout. Keep lowest-price variant as representative.

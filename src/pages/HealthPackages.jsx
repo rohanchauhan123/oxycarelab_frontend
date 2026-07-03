@@ -26,6 +26,56 @@ const HealthPackages = () => {
     ];
 
     const activePackages = packages
+        .map(p => {
+            // Fuzzy lab name matching
+            const labPartner = String(p?.labName || p?.lab || '').trim().toLowerCase();
+            const lab = Array.isArray(labs) ? labs.find(l => {
+                const lName = String(l?.name || '').trim().toLowerCase();
+                return lName === labPartner ||
+                       lName.includes(labPartner) ||
+                       labPartner.includes(lName);
+            }) : null;
+
+            const labLoc = (lab?.location || lab?.city || '').toLowerCase().trim();
+
+            const rawUserLoc = (location || '').toLowerCase().trim();
+            const locationParts = rawUserLoc.split(',').map(s => s.trim()).filter(Boolean);
+            const userCity = locationParts.length >= 2 ? locationParts[1] : locationParts[0];
+            const userLoc = (userCity || rawUserLoc).trim();
+            const locationKnown = userLoc && userLoc !== 'india';
+
+            const hasNoLab = !lab || !labLoc;
+
+            // National = truly pan-India (NOT city-specific like NCR)
+            const isNational = hasNoLab ||
+                               labLoc === 'india' ||
+                               labLoc === 'all india' ||
+                               labLoc.includes('multiple') ||
+                               labLoc.includes('pan india') ||
+                               labLoc.includes('nationwide') ||
+                               labLoc.includes('across india');
+
+            const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
+            const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
+            const isLabInNCR  = ncrCities.some(c => labLoc.includes(c));
+
+            const isDirectMatch = !hasNoLab && locationKnown && (
+                labLoc.includes(userLoc) ||
+                userLoc.includes(labLoc) ||
+                (isUserInNCR && isLabInNCR)
+            );
+
+            // Filter out packages from different-city labs
+            if (locationKnown && !isDirectMatch && !isNational) {
+                return null;
+            }
+
+            return {
+                ...p,
+                isLocal: isDirectMatch,
+                isNational: isNational
+            };
+        })
         .filter(p => {
             if (!p) return false;
             const status = String(p.status || '').toLowerCase();
@@ -34,42 +84,6 @@ const HealthPackages = () => {
             if (activeCategory !== 'All' && p.category !== activeCategory) return false;
             
             return true;
-        })
-        .map(p => {
-            const lab = Array.isArray(labs) ? labs.find(l => l?.name === p?.labName || l?.name === p?.lab) : null;
-            const labLoc = (lab?.location || '').toLowerCase();
-
-            const rawUserLoc = (location || '').toLowerCase();
-            const locationParts = rawUserLoc.split(',').map(s => s.trim());
-            const userCity = locationParts.length >= 2 ? locationParts[1] : locationParts[0];
-            const userLoc = userCity || rawUserLoc;
-
-            const hasNoLab = !lab || !labLoc;
-
-            const isNational = hasNoLab ||
-                               labLoc.includes('multiple') ||
-                               labLoc.includes('ncr') ||
-                               labLoc.includes('india') ||
-                               labLoc.includes('national') ||
-                               labLoc.includes('pan india') ||
-                               labLoc.includes('nationwide') ||
-                               labLoc.includes('across india');
-
-            const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
-            const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
-            const isLabInNCR = ncrCities.some(c => labLoc.includes(c));
-
-            const isDirectMatch = !hasNoLab && userLoc && userLoc !== 'india' && (
-                labLoc.includes(userLoc) ||
-                userLoc.includes(labLoc) ||
-                (isUserInNCR && isLabInNCR)
-            );
-
-            return {
-                ...p,
-                isLocal: isDirectMatch,
-                isNational: isNational
-            };
         })
         .sort((a, b) => {
             if (a?.isLocal && !b?.isLocal) return -1;
