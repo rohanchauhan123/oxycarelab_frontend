@@ -134,6 +134,8 @@ const SheetEditor = () => {
             name: '',
             testName: '', 
             lab: '', 
+            labName: '',
+            cities: '',
             category: viewMode === 'tests' ? 'Full Body' : 'Pathology', 
             price: 0, 
             originalPrice: 0,
@@ -285,6 +287,7 @@ const SheetEditor = () => {
                                     <th className="p-4 border-b border-r border-gray-100 text-left text-xs font-bold text-dark-text uppercase tracking-widest">Image URL</th>
                                 )}
                                 <th className="p-4 border-b border-r border-gray-100 text-left text-xs font-bold text-dark-text uppercase tracking-widest">Lab Partner</th>
+                                <th className="p-4 border-b border-r border-gray-100 text-left text-xs font-bold text-emerald-600 uppercase tracking-widest min-w-[180px]">Cities Available</th>
                                 <th className="p-4 border-b border-r border-gray-100 text-left text-xs font-bold text-dark-text uppercase tracking-widest">Category</th>
                                 <th className="p-4 border-b border-r border-gray-100 text-left text-xs font-bold text-dark-text uppercase tracking-widest min-w-[200px]">Description</th>
                                 <th className="p-4 border-b border-r border-gray-100 text-left text-xs font-bold text-dark-text uppercase tracking-widest">Price</th>
@@ -333,6 +336,15 @@ const SheetEditor = () => {
                                                 className="w-full h-full p-4 bg-transparent outline-none text-sm font-medium text-grey-text focus:bg-white focus:ring-2 focus:ring-medical-green/30 transition-all"
                                                 value={row.lab || row.labName || ''}
                                                 onChange={(e) => handleCellChange(row.id, 'lab', e.target.value)}
+                                            />
+                                        </td>
+                                        <td className="p-0 border-b border-r border-gray-50 outline-none min-w-[180px]">
+                                            <input
+                                                type="text"
+                                                className="w-full h-full p-4 bg-transparent outline-none text-xs font-bold text-emerald-700 focus:bg-emerald-50/30 focus:ring-2 focus:ring-emerald-200 transition-all placeholder:text-gray-200"
+                                                value={row.cities || ''}
+                                                onChange={(e) => handleCellChange(row.id, 'cities', e.target.value)}
+                                                placeholder="Ghaziabad, Noida — or: Pan India"
                                             />
                                         </td>
                                         <td className="p-0 border-b border-r border-gray-50 outline-none">

@@ -6,7 +6,7 @@ import { useData } from '../../context/DataContext';
 import BulkUpload from '../../components/admin/BulkUpload';
 
 const PackagesManager = () => {
-    const { packages, labs, deletePackage, addPackage, addPackages, updatePackage, togglePackageStatus, testCategories } = useData();
+    const { packages, labs, serviceableCities, deletePackage, addPackage, addPackages, updatePackage, togglePackageStatus, testCategories } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPackage, setEditingPackage] = useState(null);
     const [paramInput, setParamInput] = useState({ name: '', unit: '', range: '', groupName: '' });
@@ -30,6 +30,7 @@ const PackagesManager = () => {
         ageGroup: '',
         gender: 'Unisex',
         labName: '',
+        cities: '',
         parameters: [],
         image: '',
         status: 'Active',
@@ -140,7 +141,7 @@ const PackagesManager = () => {
             }
             setIsModalOpen(false);
             setEditingPackage(null);
-            setFormData({ name: '', price: '', originalPrice: '', category: 'Full Body', categoryType: 'Pathology', testsCount: 0, isAddon: false, desc: '', tat: '', fasting: true, sampleType: '', ageGroup: '', gender: 'Unisex', labName: '', parameters: [], image: '', status: 'Active', testMethod: 'EIA/CLIA' });
+            setFormData({ name: '', price: '', originalPrice: '', category: 'Full Body', categoryType: 'Pathology', testsCount: 0, isAddon: false, desc: '', tat: '', fasting: true, sampleType: '', ageGroup: '', gender: 'Unisex', labName: '', cities: '', parameters: [], image: '', status: 'Active', testMethod: 'EIA/CLIA' });
         } catch (error) {
             console.error("Save failed:", error);
         } finally {
@@ -218,7 +219,7 @@ const PackagesManager = () => {
                         <Button
                             onClick={() => {
                                 setEditingPackage(null);
-                                setFormData({ name: '', price: '', originalPrice: '', category: 'Full Body', categoryType: 'Pathology', testsCount: 0, isAddon: false, desc: '', tat: '', fasting: true, sampleType: '', ageGroup: '', gender: 'Unisex', labName: '', parameters: [], image: '', status: 'Active', testMethod: 'EIA/CLIA' });
+                                setFormData({ name: '', price: '', originalPrice: '', category: 'Full Body', categoryType: 'Pathology', testsCount: 0, isAddon: false, desc: '', tat: '', fasting: true, sampleType: '', ageGroup: '', gender: 'Unisex', labName: '', cities: '', parameters: [], image: '', status: 'Active', testMethod: 'EIA/CLIA' });
                                 setIsModalOpen(true);
                             }}
                             className="h-12 bg-dark-text hover:bg-black gap-2 px-6 whitespace-nowrap"
@@ -490,9 +491,56 @@ const PackagesManager = () => {
                                             >
                                                 <option value="">General (All Labs)</option>
                                                 {labs.map(lab => (
-                                                    <option key={lab.id} value={lab.name}>{lab.name}</option>
+                                                    <option key={lab.id} value={lab.name}>{lab.name} — {lab.location || lab.city || 'N/A'}</option>
                                                 ))}
                                             </select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">
+                                                Available In Cities
+                                                <span className="ml-2 text-gray-300 normal-case font-medium">comma-separated · leave blank = use lab location</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.cities}
+                                                onChange={e => setFormData({ ...formData, cities: e.target.value })}
+                                                placeholder="e.g. Ghaziabad, Noida, Delhi  —  or type: Pan India"
+                                                className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-6 font-bold text-dark-text focus:outline-none focus:border-medical-green transition-all placeholder:font-medium placeholder:text-gray-300"
+                                            />
+                                            <div className="flex flex-wrap gap-2 px-2 pt-1">
+                                                {(serviceableCities || []).map(city => (
+                                                    <button
+                                                        key={city.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const current = formData.cities ? formData.cities.split(',').map(s => s.trim()).filter(Boolean) : [];
+                                                            if (!current.map(c => c.toLowerCase()).includes(city.name.toLowerCase())) {
+                                                                setFormData({ ...formData, cities: [...current, city.name].join(', ') });
+                                                            }
+                                                        }}
+                                                        className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-full hover:bg-emerald-100 transition-all"
+                                                    >
+                                                        + {city.name}
+                                                    </button>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, cities: 'Pan India' })}
+                                                    className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 bg-blue-50 border border-blue-100 text-blue-700 rounded-full hover:bg-blue-100 transition-all"
+                                                >
+                                                    🌐 Pan India
+                                                </button>
+                                                {formData.cities && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData({ ...formData, cities: '' })}
+                                                        className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 bg-red-50 border border-red-100 text-red-500 rounded-full hover:bg-red-100 transition-all"
+                                                    >
+                                                        ✕ Clear
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 

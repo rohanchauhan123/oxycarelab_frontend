@@ -107,31 +107,45 @@ const BookTest = () => {
         .map(t => {
             if (!t) return null;
 
-            // ── Lab lookup with fuzzy name matching ──────────────────────────────
+            // ── User location (common to both strategies) ────────────────────
+            const rawUserLoc = (location || '').toLowerCase().trim();
+            const locationParts = rawUserLoc.split(',').map(s => s.trim()).filter(Boolean);
+            const userCity = (locationParts.length >= 2 ? locationParts[1] : locationParts[0]) || rawUserLoc;
+            const userLoc = userCity.trim();
+            const locationKnown = userLoc && userLoc !== 'india';
+
+            const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
+            const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
+
+            // ── Priority 1: Explicit cities field set from admin ──────────────
+            // e.g. cities: "Ghaziabad, Noida, Delhi" or "Pan India"
+            const rawCities = t.cities;
+            const testCities = rawCities
+                ? (Array.isArray(rawCities) ? rawCities : String(rawCities).split(',').map(s => s.trim()))
+                      .filter(Boolean).map(c => c.toLowerCase())
+                : [];
+
+            if (testCities.length > 0) {
+                const isPanIndia = testCities.some(c => ['pan india', 'all', 'all india'].includes(c));
+                const testIsInNCR = testCities.some(c => ncrCities.includes(c));
+                const matchesCity = isPanIndia ||
+                    testCities.some(c => c === userLoc || c.includes(userLoc) || userLoc.includes(c)) ||
+                    (isUserInNCR && testIsInNCR);
+
+                if (locationKnown && !matchesCity) return null; // admin explicitly excluded this city
+                return { ...t, isLocal: matchesCity && !isPanIndia, isNational: isPanIndia };
+            }
+
+            // ── Priority 2: Lab lookup with fuzzy name matching ───────────────
             const labPartner = String(t?.labName || t?.lab || '').trim().toLowerCase();
             const lab = Array.isArray(labs) ? labs.find(l => {
                 const lName = String(l?.name || '').trim().toLowerCase();
-                // Exact match OR partial/contains match
-                return lName === labPartner ||
-                       lName.includes(labPartner) ||
-                       labPartner.includes(lName);
+                return lName === labPartner || lName.includes(labPartner) || labPartner.includes(lName);
             }) : null;
 
             const labLoc = (lab?.location || lab?.city || '').toLowerCase().trim();
-
-            // ── User location (support "City" and "Area, City, State" formats) ──
-            const rawUserLoc = (location || '').toLowerCase().trim();
-            const locationParts = rawUserLoc.split(',').map(s => s.trim()).filter(Boolean);
-            // Take city part: "Sanjay Nagar, Ghaziabad, UP" → "ghaziabad"
-            const userCity = locationParts.length >= 2 ? locationParts[1] : locationParts[0];
-            const userLoc = (userCity || rawUserLoc).trim();
-            const locationKnown = userLoc && userLoc !== 'india';
-
-            // ── No lab found → treat as available everywhere ──────────────────
             const hasNoLab = !lab || !labLoc;
 
-            // ── National = genuinely pan-India available ──────────────────────
-            // NOTE: "Delhi NCR" is NOT national — it is local to NCR only
             const isNational = hasNoLab ||
                               labLoc === 'india' ||
                               labLoc === 'all india' ||
@@ -141,10 +155,7 @@ const BookTest = () => {
                               labLoc.includes('nationwide') ||
                               labLoc.includes('across india');
 
-            // ── NCR group — user in NCR sees any NCR lab as local ────────────
-            const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
-            const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
-            const isLabInNCR  = ncrCities.some(c => labLoc.includes(c));
+            const isLabInNCR = ncrCities.some(c => labLoc.includes(c));
 
             const isDirectMatch = !hasNoLab && locationKnown && (
                 labLoc.includes(userLoc) ||
@@ -152,11 +163,8 @@ const BookTest = () => {
                 (isUserInNCR && isLabInNCR)
             );
 
-            // ── ACTUAL LOCATION FILTER ────────────────────────────────────────
-            // If user location is known AND this test's lab is a specific-city lab
-            // that does NOT match user's city → HIDE it
             if (locationKnown && !isDirectMatch && !isNational) {
-                return null; // lab exists but is in a different city → filter out
+                return null;
             }
 
             return {
@@ -165,6 +173,7 @@ const BookTest = () => {
                 isNational: isNational
             };
         })
+
         .filter(Boolean)
         .sort((a, b) => {
             // Local tests always first

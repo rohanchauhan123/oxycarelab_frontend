@@ -27,26 +27,44 @@ const HealthPackages = () => {
 
     const activePackages = packages
         .map(p => {
-            // Fuzzy lab name matching
+            // ── User location ─────────────────────────────────────────────────
+            const rawUserLoc = (location || '').toLowerCase().trim();
+            const locationParts = rawUserLoc.split(',').map(s => s.trim()).filter(Boolean);
+            const userCity = (locationParts.length >= 2 ? locationParts[1] : locationParts[0]) || rawUserLoc;
+            const userLoc = userCity.trim();
+            const locationKnown = userLoc && userLoc !== 'india';
+
+            const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
+            const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
+
+            // ── Priority 1: Explicit cities field set from admin ──────────────
+            const rawCities = p.cities;
+            const pkgCities = rawCities
+                ? (Array.isArray(rawCities) ? rawCities : String(rawCities).split(',').map(s => s.trim()))
+                      .filter(Boolean).map(c => c.toLowerCase())
+                : [];
+
+            if (pkgCities.length > 0) {
+                const isPanIndia = pkgCities.some(c => ['pan india', 'all', 'all india'].includes(c));
+                const pkgIsInNCR = pkgCities.some(c => ncrCities.includes(c));
+                const matchesCity = isPanIndia ||
+                    pkgCities.some(c => c === userLoc || c.includes(userLoc) || userLoc.includes(c)) ||
+                    (isUserInNCR && pkgIsInNCR);
+
+                if (locationKnown && !matchesCity) return null;
+                return { ...p, isLocal: matchesCity && !isPanIndia, isNational: isPanIndia };
+            }
+
+            // ── Priority 2: Fuzzy lab name matching ───────────────────────────
             const labPartner = String(p?.labName || p?.lab || '').trim().toLowerCase();
             const lab = Array.isArray(labs) ? labs.find(l => {
                 const lName = String(l?.name || '').trim().toLowerCase();
-                return lName === labPartner ||
-                       lName.includes(labPartner) ||
-                       labPartner.includes(lName);
+                return lName === labPartner || lName.includes(labPartner) || labPartner.includes(lName);
             }) : null;
 
             const labLoc = (lab?.location || lab?.city || '').toLowerCase().trim();
-
-            const rawUserLoc = (location || '').toLowerCase().trim();
-            const locationParts = rawUserLoc.split(',').map(s => s.trim()).filter(Boolean);
-            const userCity = locationParts.length >= 2 ? locationParts[1] : locationParts[0];
-            const userLoc = (userCity || rawUserLoc).trim();
-            const locationKnown = userLoc && userLoc !== 'india';
-
             const hasNoLab = !lab || !labLoc;
 
-            // National = truly pan-India (NOT city-specific like NCR)
             const isNational = hasNoLab ||
                                labLoc === 'india' ||
                                labLoc === 'all india' ||
@@ -55,9 +73,7 @@ const HealthPackages = () => {
                                labLoc.includes('nationwide') ||
                                labLoc.includes('across india');
 
-            const ncrCities = ['delhi', 'noida', 'gurugram', 'gurgaon', 'ghaziabad', 'faridabad', 'ncr', 'greater noida'];
-            const isUserInNCR = ncrCities.some(c => rawUserLoc.includes(c));
-            const isLabInNCR  = ncrCities.some(c => labLoc.includes(c));
+            const isLabInNCR = ncrCities.some(c => labLoc.includes(c));
 
             const isDirectMatch = !hasNoLab && locationKnown && (
                 labLoc.includes(userLoc) ||
@@ -65,7 +81,6 @@ const HealthPackages = () => {
                 (isUserInNCR && isLabInNCR)
             );
 
-            // Filter out packages from different-city labs
             if (locationKnown && !isDirectMatch && !isNational) {
                 return null;
             }
@@ -76,6 +91,7 @@ const HealthPackages = () => {
                 isNational: isNational
             };
         })
+
         .filter(p => {
             if (!p) return false;
             const status = String(p.status || '').toLowerCase();
